@@ -36,6 +36,7 @@ class FeatureDataset(Dataset):
     def __getitem__(self, idx):
         print("hey")
         print(idx)
+        print(self.data.iloc[idx])
         f_path = self.data.iloc[idx, 0]
         print(f_path)
         feature = np.load(f_path)
