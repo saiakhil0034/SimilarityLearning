@@ -72,7 +72,7 @@ def main():
                              config["num_samples_class"], config["num_workers"], shuffle=False)
 
     training(exp_name, train_loader, test_loader, model,
-             config["loss_fn"], optimizer, scheduler, config["n_epochs"], cuda, config["log_interval"],
+             config["loss_fn"], optimizer, scheduler, config["num_epochs"], cuda, config["log_interval"],
              best_val_loss, metrics=[AverageNonzeroTripletsMetric()])
 
 
