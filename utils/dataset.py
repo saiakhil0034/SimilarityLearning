@@ -43,7 +43,7 @@ class FeatureDataset(Dataset):
         return feature, label
 
 
-def get_loader(data_path, seqs, transforms, n_classes, n_samples, num_workers, shuffle, cuda):
+def get_loader(cuda, data_path, seqs, transforms, n_classes, n_samples, num_workers, shuffle):
 
     dataset = FeatureDataset(data_path, seqs,  transforms)
 

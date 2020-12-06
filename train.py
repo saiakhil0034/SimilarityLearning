@@ -66,10 +66,10 @@ def main():
     scheduler = lr_scheduler.StepLR(
         optimizer, config["lrstep_interval"], config["gamma"], last_epoch=-1)
 
-    train_loader = get_loader(args.data_path, config["train_seq"], config["transforms"], config["num_classes_batch"],
-                              config["num_samples_class"], config["num_workers"], shuffle=True, cuda)
-    test_loader = get_loader(args.data_path, config["test_seq"], config["transform"], config["num_classes_batch"],
-                             config["num_samples_class"], config["num_workers"], shuffle=False, cuda)
+    train_loader = get_loader(cuda, args.data_path, config["train_seq"], config["transforms"], config["num_classes_batch"],
+                              config["num_samples_class"], config["num_workers"], shuffle=True)
+    test_loader = get_loader(cuda, args.data_path, config["test_seq"], config["transform"], config["num_classes_batch"],
+                             config["num_samples_class"], config["num_workers"], shuffle=False)
 
     training(exp_name, train_loader, test_loader, model,
              config["loss_fn"], optimizer, scheduler, config["n_epochs"], cuda, config["log_interval"],
