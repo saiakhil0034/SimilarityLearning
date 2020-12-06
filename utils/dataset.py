@@ -35,11 +35,11 @@ class FeatureDataset(Dataset):
 
     def __getitem__(self, idx):
         print("hey")
-        f_path = self.data.iloc[idx, 0]
+        f_path = self.data.loc[idx, "path"]
         print(f_path)
         feature = np.load(f_path)
         print("hello")
-        label = self.data.iloc[idx, 1]
+        label = self.data.loc[idx, "label"]
 
         if transform:
             feature = transform(feature)
