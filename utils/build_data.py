@@ -14,15 +14,17 @@ def get_data(data_path, seqs):
             od_path = dir_path + f"/{object_id}"
             frames = os.listdir(od_path)
             label = object_id
-            ob_labels = [label for _ in frames]
-            labels += ob_labels
+            num_frames = len(frames)
+            if num_frames > 3:
+                ob_labels = [label for _ in frames]
+                labels += ob_labels
 
-            obj_data = pd.DataFrame()
-            obj_data["path"] = np.array([od_path + f"/{f}" for f in frames if frames[-4:]
-                                         in ('.npy', '.npz')]
-                                        ).reshape(-1, 1)
-            obj_data["label"] = np.array(ob_labels)
-            #print(obj_data.shape)
-            data_frames.append(obj_data)
+                obj_data = pd.DataFrame()
+                obj_data["path"] = np.array([od_path + f"/{f}" for f in frames if frames[-4:]
+                                             in ('.npy', '.npz')]
+                                            ).reshape(-1, 1)
+                obj_data["label"] = np.array(ob_labels)
+                # print(obj_data.shape)
+                data_frames.append(obj_data)
     data = pd.concat(data_frames, axis=1)
     return data, np.array(labels)
