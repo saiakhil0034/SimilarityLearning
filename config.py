@@ -14,7 +14,7 @@ config = {
     "num_samples_class": 10,
     "num_workers": 2,
     "train_seq": [1, 2, 3],
-    "val_seq": [4, 5, 6],
+    "test_seq": [4, 5, 6],
     "transforms": [],
     "loss_fn": TripletLoss(margin, TripletSelector(margin, "semihard"))
 }
