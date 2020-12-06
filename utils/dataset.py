@@ -14,6 +14,7 @@ def add_jitter(data, sigma=0.01, clip=0.01):
         Return:
           BxNx3 array, jittered batch of point clouds
     """
+    print("hi")
     B, N, C = data.shape
     jittered_data = torch.clip(
         sigma * np.random.randn(B, N, C), -1 * clip, clip)
@@ -33,9 +34,11 @@ class FeatureDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
+        print("hey")
         f_path = self.data.iloc[idx, 0]
         feature = np.load(f_path)
-        label = self.data.iloc[idx, 0]
+        print("hello")
+        label = self.data.iloc[idx, 1]
 
         if transform:
             feature = transform(feature)
