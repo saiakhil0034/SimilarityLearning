@@ -22,7 +22,7 @@ def get_data(data_path, seqs):
                                          in ('.npy', '.npz')]
                                         ).reshape(-1, 1)
             obj_data["label"] = np.array(ob_labels)
-            print(obj_data.shape)
+            #print(obj_data.shape)
             data_frames.append(obj_data)
     data = pd.concat(data_frames, axis=1)
     return data, np.array(labels)
