@@ -54,7 +54,7 @@ def get_loader(cuda, data_path, seqs, transforms, n_classes, n_samples, num_work
 
     kwargs = {'num_workers': num_workers, 'pin_memory': True} if cuda else {}
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_sampler=batch_sampler, shuffle=shuffle, **kwargs)
+        dataset, batch_sampler=batch_sampler, **kwargs)
 
     return data_loader
 
