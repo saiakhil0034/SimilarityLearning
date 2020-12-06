@@ -26,7 +26,8 @@ class FeatureDataset(Dataset):
     def __init__(self, data_path, seqs, transform=None, add_jitter=True):
 
         self.seqs = seqs
-        self.data, self.labels = get_data(data_path, seqs)
+        self.data = get_data(data_path, seqs)
+        self.labels = self.data["label"]
         self.transform = transform
         self.add_jitter = add_jitter
 
@@ -43,9 +44,9 @@ class FeatureDataset(Dataset):
         print("hello")
         label = self.data.iloc[idx, 1]
 
-        if transform:
+        if self.transform:
             feature = transform(feature)
-        if add_jitter:
+        if self.add_jitter:
             feature = add_jitter(feature)
         return feature, label
 
