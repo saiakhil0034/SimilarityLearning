@@ -68,7 +68,7 @@ def main():
 
     train_loader = get_loader(cuda, args.data_path, config["train_seq"], config["transforms"], config["num_classes_batch"],
                               config["num_samples_class"], config["num_workers"], shuffle=True)
-    test_loader = get_loader(cuda, args.data_path, config["test_seq"], config["transform"], config["num_classes_batch"],
+    test_loader = get_loader(cuda, args.data_path, config["test_seq"], config["transforms"], config["num_classes_batch"],
                              config["num_samples_class"], config["num_workers"], shuffle=False)
 
     training(exp_name, train_loader, test_loader, model,
