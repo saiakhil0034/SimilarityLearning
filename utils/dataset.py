@@ -89,9 +89,11 @@ class BalancedBatchSampler(BatchSampler):
                 self.labels_set, self.n_classes, replace=False)
             indices = []
             for class_ in classes:
-                indices.extend(self.label_to_indices[class_][
-                               self.used_label_indices_count[class_]:self.used_label_indices_count[
-                                   class_] + self.n_samples])
+                class_sample_indices = self.label_to_indices[class_][
+                    self.used_label_indices_count[class_]:self.used_label_indices_count[
+                        class_] + self.n_samples]
+                indices.extend(class_sample_indices)
+                print(class_sample_indices, len(self.label_to_indices[class_]))
                 self.used_label_indices_count[class_] += self.n_samples
                 if self.used_label_indices_count[class_] + self.n_samples > len(self.label_to_indices[class_]):
                     np.random.shuffle(self.label_to_indices[class_])

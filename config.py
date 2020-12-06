@@ -13,8 +13,8 @@ config = {
     "num_classes_batch": 20,
     "num_samples_class": 3,
     "num_workers": 2,
-    "train_seq": [1, 2, 3],
-    "test_seq": [4, 5, 6],
+    "train_seq": [1, 2, 3, 4, 5, 6],
+    "test_seq": [7, 8, 9],
     "transforms": [],
     "loss_fn": TripletLoss(margin, TripletSelector(margin, "semihard"))
 }
