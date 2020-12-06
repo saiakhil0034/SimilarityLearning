@@ -1,3 +1,4 @@
+import torch
 from torch.utils.data import Dataset
 from torch.utils.data.sampler import BatchSampler
 import os
