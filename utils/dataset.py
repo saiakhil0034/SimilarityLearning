@@ -1,6 +1,7 @@
 from torch.utils.data import Dataset
 from torch.utils.data.sampler import BatchSampler
 import os
+import numpy as np
 
 from utils.build_data import get_data
 
@@ -19,11 +20,11 @@ def add_jitter(data, sigma=0.01, clip=0.01):
     return data
 
 
-class FeatureDataset(data.Dataset):
+class FeatureDataset(Dataset):
     def __init__(self, data_path, seqs, transform=None, add_jitter=True):
 
         self.seqs = seqs
-        self.data = get_data(data_path, seqs)
+        self.data, self.labels = get_data(data_path, seqs)
         self.transform = transform
         self.add_jitter = add_jitter
 
@@ -42,13 +43,13 @@ class FeatureDataset(data.Dataset):
         return feature, label
 
 
-def get_loader(data_path, seqs, transforms, n_classes, n_samples, num_workers, shuffle):
+def get_loader(data_path, seqs, transforms, n_classes, n_samples, num_workers, shuffle, cuda):
 
     dataset = FeatureDataset(data_path, seqs,  transforms)
 
     # We'll create mini batches by sampling labels that will be present in the mini batch and number of examples from each class
     batch_sampler = BalancedBatchSampler(
-        dataset.train_labels, n_classes=n_classes, n_samples=n_samples)
+        dataset.labels, n_classes=n_classes, n_samples=n_samples)
 
     kwargs = {'num_workers': num_workers, 'pin_memory': True} if cuda else {}
     data_loader = torch.utils.data.DataLoader(
@@ -65,8 +66,8 @@ class BalancedBatchSampler(BatchSampler):
 
     def __init__(self, labels, n_classes, n_samples):
         self.labels = labels
-        self.labels_set = list(set(self.labels.numpy()))
-        self.label_to_indices = {label: np.where(self.labels.numpy() == label)[0]
+        self.labels_set = list(set(self.labels))
+        self.label_to_indices = {label: np.where(self.labels == label)[0]
                                  for label in self.labels_set}
         for l in self.labels_set:
             np.random.shuffle(self.label_to_indices[l])

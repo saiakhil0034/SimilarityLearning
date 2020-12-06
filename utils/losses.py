@@ -24,7 +24,7 @@ class TripletLoss(nn.Module):
         return losses.mean(), len(triplets)
 
 
-class AverageNonzeroTripletsMetric(Metric):
+class AverageNonzeroTripletsMetric(object):
     '''
     Counts average number of nonzero triplets found in minibatches
     '''

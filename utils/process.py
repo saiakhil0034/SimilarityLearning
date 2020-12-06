@@ -14,7 +14,7 @@ def save_checkpoint(exp_name, state, is_best, filename='checkpoint.pth.tar'):
             filename, f'./models/{exp_name}/' + 'model_best.pth.tar')
 
 
-def training(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda, log_interval, best_val_loss, metrics=[],
+def training(exp_name, train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda, log_interval, best_val_loss, metrics=[],
              start_epoch=0):
 
     for epoch in range(0, start_epoch):
@@ -39,7 +39,7 @@ def training(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_e
         # remember best acc and save checkpoint
         is_best = val_loss < best_val_loss
         best_val_loss = min(val_loss, best_val_loss)
-        save_checkpoint({
+        save_checkpoint(exp_name, {
             'epoch': epoch + 1,
             'state_dict': model.state_dict(),
             'best_val_loss': best_val_loss,
