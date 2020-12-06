@@ -11,7 +11,7 @@ config = {
     "log_interval": 100,
     "lrstep_interval": 10,
     "num_classes_batch": 10,
-    "num_samples_class": 10,
+    "num_samples_class": 5,
     "num_workers": 2,
     "train_seq": [1, 2, 3],
     "test_seq": [4, 5, 6],
