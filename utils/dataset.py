@@ -70,8 +70,8 @@ class BalancedBatchSampler(BatchSampler):
         self.labels_set = list(set(self.labels))
         self.label_to_indices = {label: np.where(self.labels == label)[0]
                                  for label in self.labels_set}
-        print(min(len(i) for i in self.label_to_indices.values))
-        print(max(len(i) for i in self.label_to_indices.values))
+        print(min(len(i) for i in self.label_to_indices.values()))
+        print(max(len(i) for i in self.label_to_indices.values()))
 
         for l in self.labels_set:
             np.random.shuffle(self.label_to_indices[l])
