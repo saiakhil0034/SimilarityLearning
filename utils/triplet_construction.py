@@ -38,6 +38,13 @@ class TripletSelector(object):
         distance_matrix = distance_matrix.cpu()
 
         labels = labels.cpu().data.numpy()
+
+        if len(labels.shape) > 1:
+            if labels.shape[1] > 1:
+                print(" warning multi dimentional label")
+
+        labels = labels.ravel()
+
         triplets = []
 
         for label in set(labels):
