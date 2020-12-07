@@ -2,6 +2,7 @@ import torch
 from torch.optim import lr_scheduler
 import torch.optim as optim
 from torch.autograd import Variable
+
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
@@ -47,7 +48,7 @@ def main():
                          no=config["output_fl"]).to(device)
     model.apply(init_weights)
 
-    best_val_loss = 0
+    best_val_loss = 1000000
     # optionally resume from a checkpoint
     if args.resume:
         if os.path.isfile(args.resume):

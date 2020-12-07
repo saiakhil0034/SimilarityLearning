@@ -5,14 +5,14 @@ import os
 
 def save_checkpoint(exp_name, state, is_best, filename='checkpoint.pth.tar'):
     """Saves checkpoint to disk"""
-    directory = f'./models/{exp_name}/'
+    directory = f'./results/models/{exp_name}/'
     if not os.path.exists(directory):
         os.makedirs(directory)
     filename = directory + filename
     torch.save(state, filename)
     if is_best:
         shutil.copyfile(
-            filename, f'./models/{exp_name}/' + 'model_best.pth.tar')
+            filename, f'./results/models/{exp_name}/' + 'model_best.pth.tar')
 
 
 def training(exp_name, train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda, log_interval, best_val_loss, metrics=[],
