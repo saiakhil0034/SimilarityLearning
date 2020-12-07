@@ -5,7 +5,7 @@ import torch.nn.functional as F
 class EmbeddingNet(nn.Module):
     def __init__(self, ni=128, no=64):
         super(EmbeddingNet, self).__init__()
-        self.convnet = nn.Sequential(nn.Conv3d(ni, 128, 2), nn.PReLU(),
+        self.convnet = nn.Sequential(nn.Conv3d(ni, 128, 2, padding=2), nn.PReLU(),
                                      nn.MaxPool3d(2, stride=1),
                                      nn.Conv3d(128, 64, 2), nn.PReLU(),
                                      nn.MaxPool3d(2, stride=1),
@@ -13,7 +13,7 @@ class EmbeddingNet(nn.Module):
                                      nn.MaxPool3d(2, stride=1),
                                      )
 
-        self.fc = nn.Sequential(nn.Linear(128 * 5 * 5 * 5, 256),
+        self.fc = nn.Sequential(nn.Linear(128 * 4 * 4 * 4, 256),
                                 nn.PReLU(),
                                 nn.Linear(256, 128),
                                 nn.PReLU(),
