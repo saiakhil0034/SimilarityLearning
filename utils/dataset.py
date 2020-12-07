@@ -7,17 +7,16 @@ import numpy as np
 from utils.build_data import get_data
 
 
-def add_jitter(data, sigma=0.01, clip=0.01):
+def add_jitter(data, sigma=0.001, clip=0.01):
     """ Randomly jitter points. jittering is per point.
         Input:
           BxNx3 array, original batch of point clouds
         Return:
           BxNx3 array, jittered batch of point clouds
     """
-    print("hi")
-    B, N, C = data.shape
-    jittered_data = torch.clip(
-        sigma * np.random.randn(B, N, C), -1 * clip, clip)
+    f, l, b, h = data.shape
+    jittered_data = np.clip(
+        sigma * np.random.randn(f, l, b, h), -1 * clip, clip)
     jittered_data += data
     return data
 
@@ -35,20 +34,15 @@ class FeatureDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        print("hey")
-        print(idx)
-        print(self.data.iloc[idx])
         f_path = self.data.iloc[idx, 0]
-        print(f_path)
         feature = np.load(f_path)
-        print("hello")
         label = self.data.iloc[idx, 1]
 
         if self.transform:
             feature = transform(feature)
         if self.add_jitter:
             feature = add_jitter(feature)
-        return feature, label
+        return feature, torch.Tensor(label)
 
 
 def get_loader(cuda, data_path, seqs, transforms, n_classes, n_samples, num_workers, shuffle):
@@ -100,8 +94,6 @@ class BalancedBatchSampler(BatchSampler):
                     self.used_label_indices_count[class_]:self.used_label_indices_count[
                         class_] + self.n_samples]
                 indices.extend(class_sample_indices)
-                print(class_sample_indices, len(
-                    self.label_to_indices[class_]), len(self.labels))
                 self.used_label_indices_count[class_] += self.n_samples
                 if self.used_label_indices_count[class_] + self.n_samples > len(self.label_to_indices[class_]):
                     np.random.shuffle(self.label_to_indices[class_])

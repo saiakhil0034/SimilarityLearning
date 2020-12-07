@@ -1,5 +1,7 @@
 from utils.losses import TripletLoss
 from utils.triplet_construction import TripletSelector
+from torchvision import transforms
+
 
 margin = 1
 config = {
@@ -15,6 +17,6 @@ config = {
     "num_workers": 2,
     "train_seq": [1, 2, 3, 4, 5, 6],
     "test_seq": [7, 8, 9],
-    "transforms": [],
+    "transforms": transforms.Compose([transforms.ToTensor()]),
     "loss_fn": TripletLoss(margin, TripletSelector(margin, "semihard"))
 }

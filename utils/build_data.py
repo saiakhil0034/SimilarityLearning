@@ -15,12 +15,11 @@ def get_data(data_path, seqs):
             label = object_id
             num_frames = len(frames)
             if num_frames > 3:
-                ob_labels = [label for _ in frames]
-
+                paths = np.array([od_path + f"/{f}" for f in frames if f[-4:]
+                                  in ('.npy', '.npz')])
+                ob_labels = [label for _ in paths]
                 obj_data = pd.DataFrame()
-                obj_data["path"] = np.array([od_path + f"/{f}" for f in frames if frames[-4:]
-                                             in ('.npy', '.npz')]
-                                            ).reshape(-1, 1)
+                obj_data["path"] = paths
                 obj_data["label"] = np.array(ob_labels)
                 # print(obj_data.shape)
                 data_frames.append(obj_data)
