@@ -21,7 +21,6 @@ def training(exp_name, train_loader, val_loader, model, loss_fn, optimizer, sche
         scheduler.step()
 
     for epoch in range(start_epoch, n_epochs):
-        scheduler.step()
 
         # Train stage
         train_loss, metrics = train_epoch(
@@ -44,6 +43,8 @@ def training(exp_name, train_loader, val_loader, model, loss_fn, optimizer, sche
             'state_dict': model.state_dict(),
             'best_val_loss': best_val_loss,
         }, is_best)
+
+        scheduler.step()
 
         message += '\nEpoch: {}/{}. Validation set: Average loss: {:.4f}'.format(epoch + 1, n_epochs,
                                                                                  val_loss)
