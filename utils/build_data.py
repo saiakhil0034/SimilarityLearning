@@ -12,7 +12,7 @@ def get_data(data_path, seqs):
         for object_id in objects:
             od_path = dir_path + f"/{object_id}"
             frames = os.listdir(od_path)
-            label = object_id
+            label = int(object_id)
             num_frames = len(frames)
             if num_frames > 3:
                 paths = np.array([od_path + f"/{f}" for f in frames if f[-4:]
