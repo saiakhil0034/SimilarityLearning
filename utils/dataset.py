@@ -42,7 +42,7 @@ class FeatureDataset(Dataset):
             feature = transform(feature)
         if self.add_jitter:
             feature = add_jitter(feature)
-        return feature, torch.Tensor(label)
+        return torch.Tensor(feature), torch.Tensor(label)
 
 
 def get_loader(cuda, data_path, seqs, transforms, n_classes, n_samples, num_workers, shuffle):
