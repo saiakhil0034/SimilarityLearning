@@ -289,7 +289,6 @@ class Experiment(object):
                     self.history['best_val'] = min_val_loss
                     self.history['best_epoch'] = epoch
                     print('Best model saved with Val loss', min_val_loss)
-                    self.history['test_accuracy'].append(accuracy)
                 with open(os.path.join(self.output_dir, 'history.json'), 'w') as f:
                     json.dump(self.history, f)
 
