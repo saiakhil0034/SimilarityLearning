@@ -114,6 +114,7 @@ class Experiment(object):
         self.mining_fn = config["mining_fn"]
         self.loss_fn = config["loss_fn"]
         self.accuracy_calculator = config["accuracy_calculator"]
+        output_dir = f"./results/{output_dir}"
 
         # Initialize history
         history = {
