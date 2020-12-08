@@ -3,7 +3,7 @@ import sys
 import torch
 from torch import nn
 import torch.utils.data as td
-from data_loader import get_loader
+from utils.dataset import get_loader, BalancedBatchSampler
 from config import config
 from matplotlib import pyplot as plt
 from time import time
@@ -99,7 +99,7 @@ class Experiment(object):
             set and the validation set. (default: False)
     """
 
-    def __init__(self, model, device, args, criterion, optimizer, stats_manager,
+    def __init__(self, model, device, cuda, args, optimizer, stats_manager,
                  output_dir=None, perform_validation_during_training=True):
 
         # Define data loaders
@@ -172,7 +172,7 @@ class Experiment(object):
 
     def load_state_dict(self, checkpoint):
         """Loads the experiment from the input checkpoint."""
-        self.encoder.load_state_dict(checkpoint['Model'])
+        self.model.load_state_dict(checkpoint['Model'])
         self.optimizer.load_state_dict(checkpoint['Optimizer'])
         self.history = checkpoint['History']
 
@@ -252,27 +252,8 @@ class Experiment(object):
             s = time()
             self.stats_manager.init()
             for batch_idx, (data, target) in enumerate(train_loader):
-                target = target if len(target) > 0 else None
-                if not type(data) in (tuple, list):
-                    data = (data,)
+                self.train_epoch()
 
-                if cuda:
-                    data = tuple(d.cuda() for d in data)
-                    if target is not None:
-                        target = target.cuda()
-
-                self.model.zero_grad()
-
-                imageFeatures = self.model.forward(images)
-                loss = self.criterion(decoderOutputs, targets)
-                loss.backward()
-                self.optimizer.step()
-
-                with torch.no_grad():
-                    self.stats_manager.accumulate(
-                        loss.item(), list(images.size())[0])
-                    #print("loss for batch",(idx, loss.item()))
-            # print('here')
             print(f'Time taken for train : {time() - s}')
             if not self.perform_validation_during_training:
                 self.history.append(self.stats_manager.summarize())
@@ -280,27 +261,23 @@ class Experiment(object):
                 # train_loss = self.stats_manager.summarize() #don't change the order
                 train_loss = self.stats_manager.summarize()
                 start = time()
-                val_loss, perplexity = self.evaluate(
+                val_loss, accuracy = self.evaluate(
                     mode='val', generate=False)  # don't change the order
                 end = time()
-                print('Time taken for validation : ', end - start)
-                print('Val perplexity at ', epoch, ' : ', perplexity)
-                print('Val Loss at ', epoch, ' : ', val_loss)
-                print('Train Loss at ', epoch, ' : ', train_loss)
+                message += f'\nTime taken for validation : {end - start}'
+                message += f'\nVal accuracy at {epoch} : {accuracy}'
+                message += f'\nVal Loss at {epoch} : {val_loss}'
+                message += f'\nTrain Loss at {epoch} : {train_loss}'
+                print(message)
                 self.history['losses'].append((train_loss, val_loss))
-                self.history['val_perplexity'].append(perplexity)
+                self.history['val_accuracy'].append(accuracy)
                 if(val_loss < min_val_loss):
                     min_val_loss = val_loss
                     self.save_bestmodel()
                     self.history['best_val'] = min_val_loss
                     self.history['best_epoch'] = epoch
                     print('Best model saved with Val loss', min_val_loss)
-                    start = time()
-                    test_loss, perplexity = self.evaluate(
-                        mode='test', generate=True)
-                    end = time()
-                    print('Time taken for test : ', end - start)
-                    self.history['test_perplexity'].append(perplexity)
+                    self.history['test_accuracy'].append(accuracy)
                 with open(os.path.join(self.output_dir, 'history.json'), 'w') as f:
                     json.dump(self.history, f)
 
@@ -329,33 +306,22 @@ class Experiment(object):
             loss_inputs += target
 
         loss, num_triplets = self.loss_fn(*loss_inputs)
-        return loss, num_triplets
+        return loss, num_triplets, data.shape[0]
 
-    def train_epoch(train_loader, model, config, optimizer, cuda, metrics):
-        s = time()
-            self.stats_manager.init()
-
+    def train_epoch(self):
+        self.stats_manager.init()
         model.train()
-
         for batch_idx, (data, target) in enumerate(train_loader):
-            loss, num_triplets = self.batch_forward_pass(data, target)
+            model.zero_grad()
+            loss, num_triplets, num_elems = self.batch_forward_pass(
+                data, target)
             loss.backward()
-            optimizer.step()
+            self.optimizer.step()
 
-            self.stats_manager.accumulate(loss.item(), num_triplets)
+            with torch.no_grad():
+                self.stats_manager.accumulate(loss.item(), num_triplets)
 
-            if batch_idx % log_interval == 0:
-                message = 'Train: [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                    batch_idx * len(data[0]), len(train_loader.dataset),
-                    100. * batch_idx / len(train_loader), np.mean(losses))
-                for metric in metrics:
-                    message += '\t{}: {}'.format(metric.name(), metric.value())
-
-                print(message)
-                losses = []
-
-        total_loss /= (batch_idx + 1)
-        return total_loss, metrics
+        return self.stats_manager.summarize(), loss.item()
 
     def evaluate(self):
         """Evaluates the experiment, i.e., forward propagates the validation set
@@ -368,7 +334,8 @@ class Experiment(object):
         loaderToRun = self.test_loader
         with torch.no_grad():
             for batch_idx, (data, target) in enumerate(loaderToRun):
-                loss, num_triplets = self.batch_forward_pass(data, target)
+                loss, accuracy, num_triplets, num_elems = self.batch_forward_pass(
+                    data, target)
                 self.stats_manager.accumulate(loss.item(), num_triplets)
 
         return self.stats_manager.summarize(), loss.item()

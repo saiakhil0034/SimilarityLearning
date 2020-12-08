@@ -50,8 +50,8 @@ def get_loader(cuda, data_path, seqs, config, shuffle):
     dataset = FeatureDataset(data_path, seqs,  config["transforms"])
 
     # We'll create mini batches by sampling labels that will be present in the mini batch and number of examples from each class
-    batch_sampler = BalancedBatchSampler(
-        dataset.labels, n_classes=config["n_classes"], n_samples=config["n_samples"])
+    batch_sampler = BalancedBatchSampler(dataset.labels, n_classes=config["num_classes_batch"],
+                                         n_samples=config["num_samples_class"])
 
     kwargs = {'num_workers': config["num_workers"],
               'pin_memory': True} if cuda else {}

@@ -16,7 +16,7 @@ def save_checkpoint(exp_name, state, is_best, filename='checkpoint.pth.tar'):
             filename, f'./results/models/{exp_name}/' + 'model_best.pth.tar')
 
 
-def training(exp_name, train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda, log_interval, best_val_loss, metrics=[],
+def training(exp_name, train_loader, val_loader, model, optimizer, scheduler, config, cuda, best_val_loss, metrics=[],
              start_epoch=0):
 
     for epoch in range(0, start_epoch):
@@ -26,7 +26,7 @@ def training(exp_name, train_loader, val_loader, model, loss_fn, optimizer, sche
 
         # Train stage
         train_loss, metrics = train_epoch(
-            train_loader, model, loss_fn, optimizer, cuda, log_interval, metrics)
+            train_loader, model, config, optimizer, cuda, metrics)
 
         message = 'Epoch: {}/{}. Train set: Average loss: {:.4f}'.format(
             epoch + 1, n_epochs, train_loss)
@@ -34,7 +34,7 @@ def training(exp_name, train_loader, val_loader, model, loss_fn, optimizer, sche
             message += '\t{}: {}'.format(metric.name(), metric.value())
 
         val_loss, metrics = test_epoch(
-            val_loader, model, loss_fn, cuda, metrics)
+            val_loader, model, config, cuda, metrics)
         val_loss /= len(val_loader)
 
         # remember best acc and save checkpoint
@@ -56,7 +56,7 @@ def training(exp_name, train_loader, val_loader, model, loss_fn, optimizer, sche
         print(message)
 
 
-def train_epoch(train_loader, model, loss_fn, optimizer, cuda, log_interval, metrics):
+def train_epoch(train_loader, model, config, optimizer, cuda, metrics):
     for metric in metrics:
         metric.reset()
 
@@ -109,7 +109,7 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda, log_interval, met
     return total_loss, metrics
 
 
-def test_epoch(val_loader, model, loss_fn, cuda, metrics):
+def test_epoch(val_loader, model, config, cuda, metrics):
     with torch.no_grad():
         for metric in metrics:
             metric.reset()

@@ -9,6 +9,7 @@ import argparse
 
 from models.embedding_learner import EmbeddingNet
 
+import utils.nntools as nt
 from utils.losses import TripletLoss, AverageNonzeroTripletsMetric
 from utils.process import training
 from utils.triplet_construction import TripletSelector
@@ -72,8 +73,10 @@ def main():
     # test_loader = get_loader(cuda, args.data_path, config, shuffle=False)
 
     stats_manager = nt.StatsManager()
-    exp1 = nt.Experiment(model, device, args, optimizer, stats_manager,
+    exp1 = nt.Experiment(model, device, cuda, args, optimizer, stats_manager,
                          output_dir=args.model_path, perform_validation_during_training=True)
+
+    exp1.run(num_epochs=config['num_epochs'])
 
     # training(exp_name, train_loader, test_loader, model, optimizer, scheduler, config, cuda,
     #          best_val_loss, metrics=[AverageNonzeroTripletsMetric()])
