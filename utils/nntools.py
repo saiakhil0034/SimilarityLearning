@@ -295,34 +295,44 @@ class Experiment(object):
             #     plot(self)
         print("Finish training for {} epochs".format(num_epochs))
 
-    def batch_forward_pass(self, data, target):
-        target = target if len(target) > 0 else None
-        if not type(data) in (tuple, list):
-            data = (data,)
+    def batch_forward_pass(self, data, labels):
+        data, labels = data.to(device), labels.to(device)
+        self.optimizer.zero_grad()
+        embeddings = self.model(data)
+        indices_tuple = self. mining_fn(embeddings, labels)
+        loss = self.loss_fn(embeddings, labels, indices_tuple)
 
-        data = tuple(d.to(self.device) for d in data)
-        if target is not None:
-            target = target.to(self.device)
-
-        embeddings = self.model(*data)
-
-        # if type(outputs) not in (tuple, list):
-        #     outputs = (outputs,)
-        # loss_inputs = outputs
-        # if target is not None:
-        #     target = (target,)
-        #     loss_inputs += target
-
-        indices_tuple = self.mining_fn(embeddings, target)
-        loss = self.loss_fn(embeddings, target, indices_tuple)
-        # loss, num_triplets = self.loss_fn(*loss_inputs)
         return loss, mining_func.num_triplets, data[0].shape[0]
+
+    # def batch_forward_pass(self, data, target):
+    #     target = target if len(target) > 0 else None
+    #     # if not type(data) in (tuple, list):
+    #     #     data = (data,)
+    #     data = data.to(self.device)
+
+    #     # data = tuple(d.to(self.device) for d in data)
+    #     if target is not None:
+    #         target = target.to(self.device)
+
+    #     embeddings = self.model(data)
+
+    #     # if type(outputs) not in (tuple, list):
+    #     #     outputs = (outputs,)
+    #     # loss_inputs = outputs
+    #     # if target is not None:
+    #     #     target = (target,)
+    #     #     loss_inputs += target
+
+    #     indices_tuple = self.mining_fn(embeddings, target)
+    #     loss = self.loss_fn(embeddings, target, indices_tuple)
+    #     # loss, num_triplets = self.loss_fn(*loss_inputs)
+    #     return loss, mining_func.num_triplets, data[0].shape[0]
 
     def train_epoch(self):
         self.stats_manager.init()
         self.model.train()
         for batch_idx, (data, target) in enumerate(self.train_loader):
-            self.model.zero_grad()
+            self.optimizer.zero_grad()
             loss, num_triplets, num_elems = self.batch_forward_pass(
                 data, target)
             loss.backward()
