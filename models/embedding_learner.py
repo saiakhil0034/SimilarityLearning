@@ -9,11 +9,11 @@ class EmbeddingNet(nn.Module):
                                      nn.MaxPool3d(2, stride=1),
                                      nn.Conv3d(128, 64, 2), nn.PReLU(),
                                      nn.MaxPool3d(2, stride=1),
-                                     nn.Conv3d(64, 128, 2), nn.PReLU(),
+                                     nn.Conv3d(64, 32, 2), nn.PReLU(),
                                      nn.MaxPool3d(2, stride=1),
                                      )
 
-        self.fc = nn.Sequential(nn.Linear(128 * 4 * 4 * 4, 256),
+        self.fc = nn.Sequential(nn.Linear(32 * 4 * 4 * 4, 256),
                                 nn.PReLU(),
                                 nn.Linear(256, 128),
                                 nn.PReLU(),

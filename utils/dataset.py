@@ -45,15 +45,16 @@ class FeatureDataset(Dataset):
         return torch.Tensor(feature), torch.Tensor([label])
 
 
-def get_loader(cuda, data_path, seqs, transforms, n_classes, n_samples, num_workers, shuffle):
+def get_loader(cuda, data_path, seqs, config, shuffle):
 
-    dataset = FeatureDataset(data_path, seqs,  transforms)
+    dataset = FeatureDataset(data_path, seqs,  config["transforms"])
 
     # We'll create mini batches by sampling labels that will be present in the mini batch and number of examples from each class
     batch_sampler = BalancedBatchSampler(
-        dataset.labels, n_classes=n_classes, n_samples=n_samples)
+        dataset.labels, n_classes=config["n_classes"], n_samples=config["n_samples"])
 
-    kwargs = {'num_workers': num_workers, 'pin_memory': True} if cuda else {}
+    kwargs = {'num_workers': config["num_workers"],
+              'pin_memory': True} if cuda else {}
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_sampler=batch_sampler, **kwargs)
 

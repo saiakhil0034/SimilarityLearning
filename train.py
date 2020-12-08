@@ -28,6 +28,7 @@ parser.add_argument('--resume', default='', type=str,
 parser.add_argument('--seed', type=int, default=42, metavar='S',
                     help='random seed (default: 42)')
 parser.add_argument('--name', type=str, help='experiment name')
+parser.add_argument('--model_path', type=str, help="model output path")
 
 
 def init_weights(m):
@@ -67,14 +68,15 @@ def main():
     scheduler = lr_scheduler.StepLR(
         optimizer, config["lrstep_interval"], config["gamma"], last_epoch=-1)
 
-    train_loader = get_loader(cuda, args.data_path, config["train_seq"], config["transforms"], config["num_classes_batch"],
-                              config["num_samples_class"], config["num_workers"], shuffle=True)
-    test_loader = get_loader(cuda, args.data_path, config["test_seq"], config["transforms"], config["num_classes_batch"],
-                             config["num_samples_class"], config["num_workers"], shuffle=False)
+    # train_loader = get_loader(cuda, args.data_path, config, shuffle=True)
+    # test_loader = get_loader(cuda, args.data_path, config, shuffle=False)
 
-    training(exp_name, train_loader, test_loader, model,
-             config["loss_fn"], optimizer, scheduler, config["num_epochs"], cuda, config["log_interval"],
-             best_val_loss, metrics=[AverageNonzeroTripletsMetric()])
+    stats_manager = nt.StatsManager()
+    exp1 = nt.Experiment(model, device, args, optimizer, stats_manager,
+                         output_dir=args.model_path, perform_validation_during_training=True)
+
+    # training(exp_name, train_loader, test_loader, model, optimizer, scheduler, config, cuda,
+    #          best_val_loss, metrics=[AverageNonzeroTripletsMetric()])
 
 
 if __name__ == "__main__":

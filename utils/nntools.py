@@ -4,7 +4,7 @@ import torch
 from torch import nn
 import torch.utils.data as td
 from data_loader import get_loader
-from config import args
+from config import config
 from matplotlib import pyplot as plt
 from time import time
 from pprint import pprint
@@ -99,36 +99,26 @@ class Experiment(object):
             set and the validation set. (default: False)
     """
 
-    def __init__(self, encoder, decoder, device, criterion, optimizer, stats_manager,
-                 output_dir=None, perform_validation_during_training=False):
+    def __init__(self, model, device, args, criterion, optimizer, stats_manager,
+                 output_dir=None, perform_validation_during_training=True):
 
         # Define data loaders
-        train_loader = get_loader(args['root'], args['train_json_path'], args['train_image_ids'],
-                                  args['vocabulary'], args['transforms'], args['batch_size'], True, args['num_workers'])
-        val_loader = get_loader(args['root'], args['train_json_path'], args['val_image_ids'],
-                                args['vocabulary'], args['transforms'], args['batch_size'], False, args['num_workers'])
-        test_loader = get_loader(args['root_'], args['test_json_path'], args['test_image_ids'],
-                                 args['vocabulary'], args['transforms'], args['batch_size'], False, args['num_workers'])
+        train_loader = get_loader(cuda, args.data_path,
+                                  config["train_seq"], config, shuffle=True)
+
+        test_loader = get_loader(cuda, args.data_path,
+                                 config["test_seq"], config, shuffle=False)
         # Initialize history
         history = {
             'losses': [],
-            'val_perplexity': [],
-            'test_perplexity': [],
-            'test': {
-                'bleu1': [],
-                'bleu4': []
-            },
-            'val': {
-                'bleu1': [],
-                'bleu4': []
-            },
-            'best_val': 10000.0,
+            'val_accuracy': [],
+            'best_val_loss': 100000.0,
             'best_epoch': -1
         }
 
         # Define checkpoint paths
         if output_dir is None:
-            output_dir = 'experiment_{}'.format(time.time())
+            output_dir = f'experiment_{time.time()}'
         os.makedirs(output_dir, exist_ok=True)
         checkpoint_path = os.path.join(output_dir, "checkpoint.pth.tar")
         config_path = os.path.join(output_dir, "config.txt")
@@ -136,16 +126,6 @@ class Experiment(object):
         bestmodel_config_path = os.path.join(
             output_dir, "bestmodel_config.txt")
         plot_path = os.path.join(output_dir, "loss_plot.png")
-        # self.scores = {
-        #     'test' : {
-        #         'bleu1' : 1.0,
-        #         'bleu4' : 1.0
-        #     },
-        #     'val' : {
-        #         'bleu1' : 1.0,
-        #         'bleu4' : 1.0
-        #     }
-        # }
 
         # Transfer all local arguments/variables into attributes
         locs = {k: v for k, v in locals().items() if k is not 'self'}
@@ -169,8 +149,7 @@ class Experiment(object):
 
     def setting(self):
         """Returns the setting of the experiment."""
-        return {'Encoder': self.encoder,
-                'Decoder': self.decoder,
+        return {'Model': self.model,
                 'Optimizer': self.optimizer,
                 'StatsManager': self.stats_manager,
                 'PerformValidationDuringTraining': self.perform_validation_during_training}
@@ -182,20 +161,18 @@ class Experiment(object):
         """
         string = ''
         for key, val in self.setting().items():
-            string += '{}({})\n'.format(key, val)
+            string += f'{key}({val})\n'
         return string
 
     def state_dict(self):
         """Returns the current state of the experiment."""
-        return {'Encoder': self.encoder.state_dict(),
-                'Decoder': self.decoder.state_dict(),
+        return {'Model': self.model.state_dict(),
                 'Optimizer': self.optimizer.state_dict(),
                 'History': self.history}
 
     def load_state_dict(self, checkpoint):
         """Loads the experiment from the input checkpoint."""
-        self.encoder.load_state_dict(checkpoint['Encoder'])
-        self.decoder.load_state_dict(checkpoint['Decoder'])
+        self.encoder.load_state_dict(checkpoint['Model'])
         self.optimizer.load_state_dict(checkpoint['Optimizer'])
         self.history = checkpoint['History']
 
@@ -262,12 +239,11 @@ class Experiment(object):
                 server without display, ``plot`` can be used to show statistics
                 on ``stdout`` or save statistics in a log file. (default: None)
         """
-        self.encoder.train()
-        self.decoder.train()
+        self.model.train()
         self.stats_manager.init()
         start_epoch = self.epoch
         device = self.device
-        min_val_loss = self.history['best_val']
+        min_val_loss = self.history['best_val_loss']
 
         print("Start/Continue training from epoch {}".format(start_epoch))
         if plot is not None:
@@ -275,30 +251,21 @@ class Experiment(object):
         for epoch in range(start_epoch, num_epochs):
             s = time()
             self.stats_manager.init()
-            for idx, (images, captions, lengths, imgIds) in enumerate(self.train_loader):
+            for batch_idx, (data, target) in enumerate(train_loader):
+                target = target if len(target) > 0 else None
+                if not type(data) in (tuple, list):
+                    data = (data,)
 
-                #                 if(idx > 150): #only for testing comment out for anything else
-                #                     break
-                # if(idx > 15):
-                #     break
-                # print('here')
-                if(list(images.size())[0] == 1):
-                    continue
-                images = images.to(device)
-                captions = captions.to(device)
-                targets = pack_padded_sequence(
-                    captions, lengths, batch_first=True)[0]
+                if cuda:
+                    data = tuple(d.cuda() for d in data)
+                    if target is not None:
+                        target = target.cuda()
 
-                self.encoder.zero_grad()
-                self.decoder.zero_grad()
+                self.model.zero_grad()
 
-                imageFeatures = self.encoder.forward(images)
-                decoderOutputs = self.decoder.forward(
-                    imageFeatures, captions, lengths)
-                #print('train : ', (decoderOutputs.size(), targets.size()))
+                imageFeatures = self.model.forward(images)
                 loss = self.criterion(decoderOutputs, targets)
                 loss.backward()
-
                 self.optimizer.step()
 
                 with torch.no_grad():
@@ -306,7 +273,7 @@ class Experiment(object):
                         loss.item(), list(images.size())[0])
                     #print("loss for batch",(idx, loss.item()))
             # print('here')
-            print('Time taken for train : ', time() - s)
+            print(f'Time taken for train : {time() - s}')
             if not self.perform_validation_during_training:
                 self.history.append(self.stats_manager.summarize())
             else:
@@ -343,113 +310,65 @@ class Experiment(object):
             #     plot(self)
         print("Finish training for {} epochs".format(num_epochs))
 
-    def getCaptions(self, tensor, imgIds):
-        tensor = tensor.squeeze(2)
-        wordsList = tensor.tolist()
-        vocab = args['vocabulary_']
+    def batch_forward_pass(self, data, target):
+        target = target if len(target) > 0 else None
+        if not type(data) in (tuple, list):
+            data = (data,)
 
-        for i in range(len(wordsList)):
-            for j in range(len(wordsList[0])):
-                wordsList[i][j] = vocab[wordsList[i][j]]
+        data = tuple(d.to(self.device) for d in data)
+        if target is not None:
+            target = target.to(self.device)
 
-        res = []
-        for id_ in imgIds:
-            res.append({'image_id': id_})
+        outputs = self.model(*data)
 
-        for i, cur in enumerate(wordsList):
-            if('caption' not in res[i]):
-                res[i]['caption'] = []
-            for j in range(len(wordsList[i])):
-                res[i]['caption'].append(wordsList[i][j])
-                if(wordsList[i][j] == '<end>'):
-                    break
+        if type(outputs) not in (tuple, list):
+            outputs = (outputs,)
+        loss_inputs = outputs
+        if target is not None:
+            target = (target,)
+            loss_inputs += target
 
-        return res
+        loss, num_triplets = self.loss_fn(*loss_inputs)
+        return loss, num_triplets
 
-    def convert(self, captions):
-        d = {}
-        for singleJSON in captions:
-            d[singleJSON['image_id']] = ' '.join(singleJSON['caption'])
-        return d
+    def train_epoch(train_loader, model, config, optimizer, cuda, metrics):
+        s = time()
+            self.stats_manager.init()
 
-    def evaluate(self, mode='val', generate=False):
+        model.train()
+
+        for batch_idx, (data, target) in enumerate(train_loader):
+            loss, num_triplets = self.batch_forward_pass(data, target)
+            loss.backward()
+            optimizer.step()
+
+            self.stats_manager.accumulate(loss.item(), num_triplets)
+
+            if batch_idx % log_interval == 0:
+                message = 'Train: [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                    batch_idx * len(data[0]), len(train_loader.dataset),
+                    100. * batch_idx / len(train_loader), np.mean(losses))
+                for metric in metrics:
+                    message += '\t{}: {}'.format(metric.name(), metric.value())
+
+                print(message)
+                losses = []
+
+        total_loss /= (batch_idx + 1)
+        return total_loss, metrics
+
+    def evaluate(self):
         """Evaluates the experiment, i.e., forward propagates the validation set
         through the network and returns the statistics computed by the stats
         manager.
         """
         self.stats_manager.init()
-        self.encoder.eval()
-        self.decoder.eval()
+        self.model.eval()
         device = self.device
-        loaderToRun = self.val_loader
-        if(mode == 'test'):
-            loaderToRun = self.test_loader
-        self.generatedCaptions = []
+        loaderToRun = self.test_loader
         with torch.no_grad():
-            for idx, (images, captions, lengths, imgIds) in enumerate(loaderToRun):
-                #                 if(idx > 50): #only for testing comment out for anything else
-                #                     break
+            for batch_idx, (data, target) in enumerate(loaderToRun):
+                loss, num_triplets = self.batch_forward_pass(data, target)
+                self.stats_manager.accumulate(loss.item(), num_triplets)
 
-                images = images.to(device)
-                captions = captions.to(device)
-                # print(captions.size())
-                targets = pack_padded_sequence(
-                    captions, lengths, batch_first=True)[0]
-
-                imageFeatures = self.encoder.forward(images)
-                if(mode == 'test'):
-                    predictedWords, decoderOutputs = self.decoder.forwardEval(
-                        imageFeatures, t=args['temperature'], mode=args['generate_mode'])
-                    decoderOutputs = pack_padded_sequence(
-                        decoderOutputs, lengths, batch_first=True)[0]
-                else:
-                    decoderOutputs = self.decoder.forward(
-                        imageFeatures, captions, lengths)
-
-                # print(decoderOutputs.size())
-
-                #print((decoderOutputs.size(), targets.size()))
-                # sys.exit()
-
-                # Need to figure out
-                loss = self.criterion(decoderOutputs, targets)
-                perplexity = torch.exp(loss)
-                self.stats_manager.accumulate(
-                    loss.item(), list(images.size())[0])
-                if(generate):
-                    generatedCaptions = self.getCaptions(
-                        predictedWords, imgIds)
-                    self.generatedCaptions += generatedCaptions
-                #print("Val loss for batch",(idx, loss.item()))
-
-        self.encoder.train()
-        self.decoder.train()
-
-        if(generate):
-            with open(os.path.join(self.output_dir, mode + '_captions.json'), 'w') as f:
-                json.dump(self.generatedCaptions, f)
-            generatedCaptions = sorted(
-                generatedCaptions, key=lambda k: k['image_id'])[:5]
-            currentCaptions = self.convert(generatedCaptions)
-
-            try:
-                with open(os.path.join(self.output_dir, mode + '_examples.json')) as f:
-                    previousCaptions = json.load(f)
-                for k in previousCaptions:
-                    previousCaptions[k].append(currentCaptions[int(k)])
-                with open(os.path.join(self.output_dir, mode + '_examples.json'), 'w') as f:
-                    json.dump(previousCaptions, f)
-            except:
-                print('failed to load previous')
-                newCaptions = {}
-                for k in currentCaptions:
-                    newCaptions[k] = [currentCaptions[k]]
-                with open(os.path.join(self.output_dir, mode + '_examples.json'), 'w') as f:
-                    json.dump(newCaptions, f)
-
-            bleu1, bleu4 = evaluate_captions(
-                args[mode + '_json_path'], os.path.join(self.output_dir, mode + '_captions.json'))
-            self.history[mode]['bleu1'].append(bleu1)
-            self.history[mode]['bleu4'].append(bleu4)
-
-        return self.stats_manager.summarize(), perplexity.item()
+        return self.stats_manager.summarize(), loss.item()
