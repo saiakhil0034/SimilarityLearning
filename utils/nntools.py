@@ -263,7 +263,7 @@ class Experiment(object):
             plot(self)
 
         for epoch in range(0, start_epoch):
-            scheduler.step()
+            self.scheduler.step()
         for epoch in range(start_epoch, num_epochs):
             s = time()
             # self.stats_manager.init()
@@ -294,7 +294,7 @@ class Experiment(object):
                     print('Best model saved with Val loss', min_val_loss)
                 with open(os.path.join(self.output_dir, 'history.json'), 'w') as f:
                     json.dump(self.history, f)
-            scheduler.step()
+            self.scheduler.step()
             self.save()
             self.plot()
             # if plot is not None:
