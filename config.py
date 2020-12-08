@@ -22,7 +22,7 @@ config = {
     "test_seq": [1, 6, 8, 10, 12, 13, 14, 15, 16, 18, 19],
     "transforms": [],
     # "loss_fn": TripletLoss(margin, TripletSelector(margin, "semihard")),
+    "accuracy_calculator": AccuracyCalculator(include=("precision_at_1",), k=1),
     "loss_fn": losses.TripletMarginLoss(margin=0.2, distance=distance, reducer=reducer),
-    "mining_fn": miners.TripletMarginMiner(margin=0.2, distance=distance, type_of_triplets="semihard"),
-    "accuracy_calculator": AccuracyCalculator(include=("precision_at_1",), k=1)
+    "mining_fn": miners.TripletMarginMiner(margin=0.2, distance=distance, type_of_triplets="semihard")
 }
