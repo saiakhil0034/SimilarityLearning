@@ -8,6 +8,8 @@ from config import config
 from matplotlib import pyplot as plt
 from time import time
 from pprint import pprint
+from pytorch_metric_learning import testers
+from pytorch_metric_learning.utils.accuracy_calculator import AccuracyCalculator
 
 
 class StatsManager(object):
@@ -103,11 +105,16 @@ class Experiment(object):
                  output_dir=None, perform_validation_during_training=True):
 
         # Define data loaders
-        train_loader = get_loader(cuda, args.data_path,
-                                  config["train_seq"], config, shuffle=True)
+        train_loader, data_train = get_loader(cuda, args.data_path,
+                                              config["train_seq"], config, shuffle=True)
 
-        test_loader = get_loader(cuda, args.data_path,
-                                 config["test_seq"], config, shuffle=False)
+        test_loader, data_test = get_loader(cuda, args.data_path,
+                                            config["test_seq"], config, shuffle=False)
+
+        self.mining_fn = config["mining_fn"]
+        self.loss_fn = config["loss_fn"]
+        self.accuracy_calculator = config["accuracy_calculator"]
+
         # Initialize history
         history = {
             'losses': [],
@@ -250,9 +257,9 @@ class Experiment(object):
             plot(self)
         for epoch in range(start_epoch, num_epochs):
             s = time()
-            self.stats_manager.init()
-            for batch_idx, (data, target) in enumerate(train_loader):
-                self.train_epoch()
+            # self.stats_manager.init()
+            # for batch_idx, (data, target) in enumerate(train_loader):
+            self.train_epoch()
 
             print(f'Time taken for train : {time() - s}')
             if not self.perform_validation_during_training:
@@ -265,7 +272,7 @@ class Experiment(object):
                     mode='val', generate=False)  # don't change the order
                 end = time()
                 message += f'\nTime taken for validation : {end - start}'
-                message += f'\nVal accuracy at {epoch} : {accuracy}'
+                message += f'\nVal accuracy (Precision@1) at {epoch} : {accuracy}'
                 message += f'\nVal Loss at {epoch} : {val_loss}'
                 message += f'\nTrain Loss at {epoch} : {train_loss}'
                 print(message)
@@ -296,23 +303,25 @@ class Experiment(object):
         if target is not None:
             target = target.to(self.device)
 
-        outputs = self.model(*data)
+        embeddings = self.model(*data)
 
-        if type(outputs) not in (tuple, list):
-            outputs = (outputs,)
-        loss_inputs = outputs
-        if target is not None:
-            target = (target,)
-            loss_inputs += target
+        # if type(outputs) not in (tuple, list):
+        #     outputs = (outputs,)
+        # loss_inputs = outputs
+        # if target is not None:
+        #     target = (target,)
+        #     loss_inputs += target
 
+        indices_tuple = self.mining_func(embeddings, target)
+        loss = self.loss_func(embeddings, target, indices_tuple)
         loss, num_triplets = self.loss_fn(*loss_inputs)
-        return loss, num_triplets, data.shape[0]
+        return loss, mining_func.num_triplets, data[0].shape[0]
 
     def train_epoch(self):
         self.stats_manager.init()
-        model.train()
-        for batch_idx, (data, target) in enumerate(train_loader):
-            model.zero_grad()
+        self.model.train()
+        for batch_idx, (data, target) in enumerate(self.train_loader):
+            self.model.zero_grad()
             loss, num_triplets, num_elems = self.batch_forward_pass(
                 data, target)
             loss.backward()
@@ -322,6 +331,10 @@ class Experiment(object):
                 self.stats_manager.accumulate(loss.item(), num_triplets)
 
         return self.stats_manager.summarize(), loss.item()
+
+    def get_all_embeddings(self, dataset):
+        tester = testers.BaseTester()
+        return tester.get_all_embeddings(dataset, self.model)
 
     def evaluate(self):
         """Evaluates the experiment, i.e., forward propagates the validation set
@@ -334,8 +347,23 @@ class Experiment(object):
         loaderToRun = self.test_loader
         with torch.no_grad():
             for batch_idx, (data, target) in enumerate(loaderToRun):
-                loss, accuracy, num_triplets, num_elems = self.batch_forward_pass(
+                loss, num_triplets, num_elems = self.batch_forward_pass(
                     data, target)
                 self.stats_manager.accumulate(loss.item(), num_triplets)
 
-        return self.stats_manager.summarize(), loss.item()
+            train_embeddings, train_labels = self.get_all_embeddings(
+                self.data_train)
+            test_embeddings, test_labels = self.get_all_embeddings(
+                self.data_test)
+            print("Computing accuracy")
+            accuracies = self.accuracy_calculator.get_accuracy(test_embeddings,
+                                                               train_embeddings,
+                                                               np.squeeze(
+                                                                   test_labels),
+                                                               np.squeeze(
+                                                                   train_labels),
+                                                               False)
+            print(
+                "Test set accuracy (Precision@1) = {}".format(accuracies["precision_at_1"]))
+
+        return self.stats_manager.summarize(), accuracies["precision_at_1"]

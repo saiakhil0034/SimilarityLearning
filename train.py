@@ -10,7 +10,7 @@ import argparse
 from models.embedding_learner import EmbeddingNet
 
 import utils.nntools as nt
-from utils.losses import TripletLoss, AverageNonzeroTripletsMetric
+from utils.losses import TripletLoss
 from utils.process import training
 from utils.triplet_construction import TripletSelector
 from utils.build_data import get_data

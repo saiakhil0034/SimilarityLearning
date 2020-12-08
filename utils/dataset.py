@@ -58,7 +58,7 @@ def get_loader(cuda, data_path, seqs, config, shuffle):
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_sampler=batch_sampler, **kwargs)
 
-    return data_loader
+    return data_loader, dataset
 
 
 class BalancedBatchSampler(BatchSampler):

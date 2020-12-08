@@ -7,3 +7,5 @@ pyyaml
 scikit-image
 tqdm
 pandas
+pytorch-metric-learning
+faiss-gpu
