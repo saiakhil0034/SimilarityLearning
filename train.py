@@ -73,7 +73,7 @@ def main():
     # test_loader = get_loader(cuda, args.data_path, config, shuffle=False)
 
     stats_manager = nt.StatsManager()
-    exp1 = nt.Experiment(model, device, cuda, args, optimizer, stats_manager,
+    exp1 = nt.Experiment(model, device, cuda, args, optimizer, stats_manager, scheduler,
                          output_dir=args.model_path, perform_validation_during_training=True)
 
     exp1.run(num_epochs=config['num_epochs'])
