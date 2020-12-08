@@ -371,7 +371,7 @@ class Experiment(object):
                 self.data_train)
             test_embeddings, test_labels = self.get_all_embeddings(
                 self.data_test)
-            print("Computing accuracy")
+            # print("Computing accuracy")
             accuracies = self.accuracy_calculator.get_accuracy(test_embeddings,
                                                                train_embeddings,
                                                                np.squeeze(
@@ -379,7 +379,7 @@ class Experiment(object):
                                                                np.squeeze(
                                                                    train_labels),
                                                                False)
-            print(
-                "Test set accuracy (Precision@1) = {}".format(accuracies["precision_at_1"]))
+            # print(
+            #     "Test set accuracy (Precision@1) = {}".format(accuracies["precision_at_1"]))
 
         return self.stats_manager.summarize(), accuracies["precision_at_1"]
