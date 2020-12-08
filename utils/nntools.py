@@ -1,15 +1,19 @@
 import os
 import sys
+import json
 import torch
+import numpy as np
 from torch import nn
 import torch.utils.data as td
-from utils.dataset import get_loader, BalancedBatchSampler
-from config import config
 from matplotlib import pyplot as plt
 from time import time
 from pprint import pprint
+
 from pytorch_metric_learning import testers
 from pytorch_metric_learning.utils.accuracy_calculator import AccuracyCalculator
+
+from utils.dataset import get_loader, BalancedBatchSampler
+from config import config
 
 
 class StatsManager(object):
@@ -229,6 +233,7 @@ class Experiment(object):
         plt.ylabel('Loss')
         plt.title('Loss vs Epochs')
         plt.savefig(self.plot_path)
+        plt.close()
 
     def run(self, num_epochs, plot=None):
         """Runs the experiment, i.e., trains the network using backpropagation
@@ -262,20 +267,19 @@ class Experiment(object):
             # for batch_idx, (data, target) in enumerate(train_loader):
             self.train_epoch()
 
-            print(f'Time taken for train : {time() - s}')
+            message = f'Time taken for train : {time() - s}'
             if not self.perform_validation_during_training:
                 self.history.append(self.stats_manager.summarize())
             else:
                 # train_loss = self.stats_manager.summarize() #don't change the order
                 train_loss = self.stats_manager.summarize()
+                message += f'\nTrain Loss at {epoch} : {train_loss}'
                 start = time()
-                val_loss, accuracy = self.evaluate(
-                    mode='val', generate=False)  # don't change the order
+                val_loss, accuracy = self.evaluate()  # don't change the order
                 end = time()
                 message += f'\nTime taken for validation : {end - start}'
                 message += f'\nVal accuracy (Precision@1) at {epoch} : {accuracy}'
                 message += f'\nVal Loss at {epoch} : {val_loss}'
-                message += f'\nTrain Loss at {epoch} : {train_loss}'
                 print(message)
                 self.history['losses'].append((train_loss, val_loss))
                 self.history['val_accuracy'].append(accuracy)
@@ -297,7 +301,7 @@ class Experiment(object):
 
     def batch_forward_pass(self, data, labels):
         data, labels = data.to(self.device), labels.to(self.device)
-        labels = torch.flattenn(labels)
+        labels = torch.flatten(labels)
         embeddings = self.model(data)
         indices_tuple = self.mining_fn(embeddings, labels)
         loss = self.loss_fn(embeddings, labels, indices_tuple)
