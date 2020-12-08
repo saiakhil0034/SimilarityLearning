@@ -296,13 +296,13 @@ class Experiment(object):
         print("Finish training for {} epochs".format(num_epochs))
 
     def batch_forward_pass(self, data, labels):
-        data, labels = data.to(device), labels.to(device)
+        data, labels = data.to(self.device), labels.to(self.device)
         self.optimizer.zero_grad()
         embeddings = self.model(data)
-        indices_tuple = self. mining_fn(embeddings, labels)
+        indices_tuple = self.mining_fn(embeddings, labels)
         loss = self.loss_fn(embeddings, labels, indices_tuple)
 
-        return loss, mining_func.num_triplets, data[0].shape[0]
+        return loss, self.mining_fn.num_triplets, data[0].shape[0]
 
     # def batch_forward_pass(self, data, target):
     #     target = target if len(target) > 0 else None
