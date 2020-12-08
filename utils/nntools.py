@@ -342,7 +342,8 @@ class Experiment(object):
             self.optimizer.step()
 
             with torch.no_grad():
-                self.stats_manager.accumulate(loss.item(), num_triplets)
+                self.stats_manager.accumulate(
+                    loss.item() * num_triplets, num_triplets)
 
         return self.stats_manager.summarize(), loss.item()
 
@@ -363,7 +364,8 @@ class Experiment(object):
             for batch_idx, (data, target) in enumerate(loaderToRun):
                 loss, num_triplets, num_elems = self.batch_forward_pass(
                     data, target)
-                self.stats_manager.accumulate(loss.item(), num_triplets)
+                self.stats_manager.accumulate(
+                    loss.item() * num_triplets, num_triplets)
 
             train_embeddings, train_labels = self.get_all_embeddings(
                 self.data_train)
