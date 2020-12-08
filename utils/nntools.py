@@ -313,9 +313,9 @@ class Experiment(object):
         #     target = (target,)
         #     loss_inputs += target
 
-        indices_tuple = self.mining_func(embeddings, target)
-        loss = self.loss_func(embeddings, target, indices_tuple)
-        loss, num_triplets = self.loss_fn(*loss_inputs)
+        indices_tuple = self.mining_fn(embeddings, target)
+        loss = self.loss_fn(embeddings, target, indices_tuple)
+        # loss, num_triplets = self.loss_fn(*loss_inputs)
         return loss, mining_func.num_triplets, data[0].shape[0]
 
     def train_epoch(self):

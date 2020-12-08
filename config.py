@@ -18,11 +18,11 @@ config = {
     "num_classes_batch": 10,
     "num_samples_class": 20,
     "num_workers": 2,
-    +    "train_seq": [0, 2, 3, 4, 5, 7, 9, 11, 17, 20],
-    +    "test_seq": [1, 6, 8, 10, 12, 13, 14, 15, 16, 18, 19],
+    "train_seq": [0, 2, 3, 4, 5, 7, 9, 11, 17, 20],
+    "test_seq": [1, 6, 8, 10, 12, 13, 14, 15, 16, 18, 19],
     "transforms": [],
     # "loss_fn": TripletLoss(margin, TripletSelector(margin, "semihard")),
-    "loss_fn": losses.TripletMarginLoss(margin=0.2, distance=distance, reducer=reducer)
-    "mining_fn": miners.TripletMarginMiner(margin=0.2, distance=distance, type_of_triplets="semihard")
+    "loss_fn": losses.TripletMarginLoss(margin=0.2, distance=distance, reducer=reducer),
+    "mining_fn": miners.TripletMarginMiner(margin=0.2, distance=distance, type_of_triplets="semihard"),
     "accuracy_calculator": AccuracyCalculator(include=("precision_at_1",), k=1)
 }
