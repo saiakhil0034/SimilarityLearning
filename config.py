@@ -7,6 +7,7 @@ from pytorch_metric_learning.utils.accuracy_calculator import AccuracyCalculator
 distance = distances.CosineSimilarity()
 reducer = reducers.ThresholdReducer(low=0)
 margin = 0.2
+triplet_miner = TripletSelector(margin, "semihard")
 config = {
     "input_fl": 128,
     "output_fl": 64,

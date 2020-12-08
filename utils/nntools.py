@@ -111,8 +111,8 @@ class Experiment(object):
         test_loader, data_test = get_loader(cuda, args.data_path,
                                             config["test_seq"], config, shuffle=False)
 
-        self.mining_fn = config["mining_fn"]
-        self.loss_fn = config["loss_fn"]
+        self.mining_fn =  # config["mining_fn"]
+        self.loss_fn =  # config["loss_fn"]
         self.accuracy_calculator = config["accuracy_calculator"]
         output_dir = f"./results/{output_dir}"
 
@@ -297,7 +297,7 @@ class Experiment(object):
 
     def batch_forward_pass(self, data, labels):
         data, labels = data.to(self.device), labels.to(self.device)
-        self.optimizer.zero_grad()
+        labels = torch.flattenn(labels)
         embeddings = self.model(data)
         indices_tuple = self.mining_fn(embeddings, labels)
         loss = self.loss_fn(embeddings, labels, indices_tuple)
